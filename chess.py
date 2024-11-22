@@ -22,7 +22,7 @@ from termcolor import colored
 
 class Figure:
     def __init__(self, name, cord, team):
-        self.x, self.y = form_cord(cord)
+        self.cord = cord
         self.team = team
         if self.team == 1:
             self.name = colored(name, 'red')
@@ -30,7 +30,6 @@ class Figure:
             self.name = colored(name, 'blue')
     
     def go(self, cord1, cord2):
-        self.x, self.y = form_cord(cord2)
         figures[cord2] = figures[cord1]
         del figures[cord1]
 
@@ -40,6 +39,21 @@ class Figure:
 class Pawn(Figure):
     def __init__(self, name, cord, team):
         super().__init__(name, cord, team)
+        self.status = 1
+    
+    def check_move(self, cord1, cord2):
+        x1, y1 = form_cord(cord1)
+        x2, y2 = form_cord(cord2)
+        if (self.status == 1) and (x1 == x2) and abs(y2 - y1) == 2 and not(cord2 in figures):
+            self.status = 0
+            return True
+        elif x1 == x2 and abs(y1 - y2) == 1 and not(cord2 in figures):
+            return True
+        elif abs(y2 - y1) == 1 and abs(x2 - x1) == 1 and cord2 in figures:
+            del figures[cord2]
+            return True
+        print(colored('Пешка не может совершить такой ход.', 'light_red'))
+        return False
 
 class Castle(Figure):
     def __init__(self, name, cord, team):
@@ -103,12 +117,17 @@ for i in range(8):
     figures[cord_to_letter(i + 1) + '7'] = Pawn('п', cord_to_letter(i + 1) + '7', 2)
     figures[cord_to_letter(i + 1) + '2'] = Pawn('п', cord_to_letter(i + 1) + '2', 1)
 
-def move(cord1, cord2, turn):
-    if cord1 in figures:
-        if figures[cord1].team == turn:
-            figures[cord1].go(cord1, cord2)
+
+def check(cord, turn):
+    if cord in figures:
+        if figures[cord].team == turn:
+            return True
+        else:
+            print(colored('Хулиган! Это не твоя фигура.', 'light_red'))
+            return False
     else:
-        print('Что - то не так')
+        print(colored(f'На поле {cord} нет фигур.', 'light_red'))
+        return False
 
 def change_turn(turn):
     if turn == 1:
@@ -124,8 +143,11 @@ def main():
         board = form_board()
         draw_board(board)
         print()
-        cord1, cord2 = input(f'Ход Игрока {turn}:\n').split()
-        move(cord1, cord2, turn)
+        cord1, cord2 = input(colored(f'Ход Игрока {turn}:\n', 'light_cyan')).split()
+        while not(check(cord1, turn)) or not(figures[cord1].check_move(cord1, cord2)):
+            cord1, cord2 = input(colored(f'Ход Игрока {turn}:\n', 'light_cyan')).split()
+        
+        figures[cord1].go(cord1, cord2)
         turn = change_turn(turn)
 
 main()

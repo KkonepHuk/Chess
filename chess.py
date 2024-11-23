@@ -52,13 +52,49 @@ class Pawn(Figure):
         elif abs(y2 - y1) == 1 and abs(x2 - x1) == 1 and cord2 in figures:
             del figures[cord2]
             return True
-        print(colored('Пешка не может совершить такой ход.', 'light_red'))
+        print(colored('Эта пешка не может совершить такой ход.', 'light_red'))
         return False
 
 class Castle(Figure):
     def __init__(self, name, cord, team):
         super().__init__(name, cord, team)
+    
+    def check_move(self, cord1, cord2):
+        if cord2 in figures:
+            if figures[cord2].team == figures[cord1].team:
+                return self.castle_error()
+            else:
+                return self.is_row_clear(cord1, cord2)
+        return self.is_row_clear(cord1, cord2)
 
+    def is_row_clear(self, cord1, cord2):
+        x1, y1 = form_cord(cord1)
+        x2, y2 = form_cord(cord2)
+        if x1 == x2:
+            return self.check_vertical(x1, y1, y2)
+        elif y1 == y2:
+            return self.check_horizontal(y1, x1, x2)
+        return self.castle_error()
+        
+    def check_vertical(self, x, y1, y2):
+        for y in range(min(y1, y2) + 1, max(y1, y2)):
+            cord = cord_to_letter(x + 1) + str(8 - y)
+            print(cord)
+            if cord in figures:
+                return self.castle_error()
+        return True
+        
+    def check_horizontal(self, y, x1, x2):
+        for x in range(min(x1, x2) + 1, max(x1, x2)):
+            cord = cord_to_letter(x + 1) + str(y + 1)
+            if cord in figures:
+                return self.castle_error()
+        return True
+    
+    def castle_error(self):
+        print(colored('Эта ладья не может совершить такой ход.', 'light_red'))
+        return False
+        
 class Horse(Figure):
     def __init__(self, name, cord, team):
         super().__init__(name, cord, team)
@@ -118,7 +154,7 @@ for i in range(8):
     figures[cord_to_letter(i + 1) + '2'] = Pawn('п', cord_to_letter(i + 1) + '2', 1)
 
 
-def check(cord, turn):
+def check_pole(cord, turn):
     if cord in figures:
         if figures[cord].team == turn:
             return True
@@ -129,12 +165,39 @@ def check(cord, turn):
         print(colored(f'На поле {cord} нет фигур.', 'light_red'))
         return False
 
+def check_cord(cord):
+    if cord[0] in 'abcdefgh' and cord[1] in '12345678':
+        return True
+    else:
+        print(colored(f'Клетки "{cord}" не существует!', 'light_red'))
+        return False
+
 def change_turn(turn):
     if turn == 1:
         turn = 2
     elif turn == 2:
         turn = 1
     return turn
+
+def global_check(user_input, turn):
+    if user_input.count(' ') == 1:
+        cord1, cord2 = user_input.split()
+        if check_cord(cord1) and check_cord(cord2):
+            if check_pole(cord1, turn) and figures[cord1].check_move(cord1, cord2):
+                return True
+    else:
+        print(colored('Неверный формат ввода.', 'light_red'))
+    return False
+
+def get_input(turn):
+    if turn == 1:
+        color = 'red'
+    else:
+        color = 'blue'
+    user_input = input(colored(colored('Ход ', 'light_cyan') + colored(f'Игрока {turn}:\n', str(color))))
+    while not(global_check(user_input, turn)):
+        user_input = input(colored(colored('Ход ', 'light_cyan') + colored(f'Игрока {turn}:\n', str(color))))
+    return user_input.split()
 
 def main():
     win = False
@@ -143,10 +206,7 @@ def main():
         board = form_board()
         draw_board(board)
         print()
-        cord1, cord2 = input(colored(f'Ход Игрока {turn}:\n', 'light_cyan')).split()
-        while not(check(cord1, turn)) or not(figures[cord1].check_move(cord1, cord2)):
-            cord1, cord2 = input(colored(f'Ход Игрока {turn}:\n', 'light_cyan')).split()
-        
+        cord1, cord2 = get_input(turn)
         figures[cord1].go(cord1, cord2)
         turn = change_turn(turn)
 

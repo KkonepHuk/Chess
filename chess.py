@@ -137,6 +137,37 @@ class King(Figure):
     def __init__(self, name, cord, team):
         super().__init__(name, cord, team)
 
+    def possibilities(self):
+        x = letter_to_cord(self.cord[0])
+        y = int(self.cord[1])
+        cords = [str(x + 1) + str(y), str(x - 1) + str(y),
+                 str(x) + str(y + 1), str(x) + str(y - 1),
+                 str(x + 1) + str(y + 1), str(x + 1) + str(y - 1),
+                 str(x - 1) + str(y - 1), str(x - 1) + str(y + 1)]
+        possible_cords = [self.is_possible(cord) for cord in cords]
+        return possible_cords
+
+    def is_possible(self, cord):
+        if cord[0] in '12345678' and cord[1] in '12345678':
+            return cord_to_letter(int(cord[0])) + cord[1]
+        return None
+    
+    def check_move(self, cord1, cord2):
+        possible_cords = self.possibilities()
+        if cord2 in possible_cords:
+            if cord2 in figures:
+                if figures[cord2].team != self.team:
+                    return True
+                self.king_error()
+                return False
+            return True
+        self.king_error()
+        return False
+    
+    def king_error(self):
+        print(colored('Твой король не может совершить такой ход.', 'light_red'))
+        return False
+
 class Queen(Figure):
     def __init__(self, name, cord, team):
         super().__init__(name, cord, team)
@@ -196,7 +227,10 @@ def check_pole(cord, turn):
         return False
 
 def check_cord(cord):
-    if cord[0] in 'abcdefgh' and cord[1] in '12345678':
+    if len(cord) == 1:
+        print(colored('Неверный формат ввода.', 'light_red'))
+        return False
+    elif cord[0] in 'abcdefgh' and cord[1] in '12345678':
         return True
     else:
         print(colored(f'Клетки "{cord}" не существует!', 'light_red'))

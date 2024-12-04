@@ -30,6 +30,7 @@ class Figure:
             self.name = colored(name, 'blue')
     
     def go(self, cord1, cord2):
+        self.cord = cord2
         figures[cord2] = figures[cord1]
         del figures[cord1]
 
@@ -79,7 +80,6 @@ class Castle(Figure):
     def check_vertical(self, x, y1, y2):
         for y in range(min(y1, y2) + 1, max(y1, y2)):
             cord = cord_to_letter(x + 1) + str(8 - y)
-            print(cord)
             if cord in figures:
                 return self.castle_error()
         return True
@@ -98,6 +98,36 @@ class Castle(Figure):
 class Horse(Figure):
     def __init__(self, name, cord, team):
         super().__init__(name, cord, team)
+        
+    def possibilities(self):
+        x = letter_to_cord(self.cord[0])
+        y = int(self.cord[1])
+        cords = [str(x + 2) + str(y + 1), str(x + 2) + str(y - 1), str(x - 2) + str(y + 1),
+                 str(x - 2) + str(y - 1), str(x + 1) + str(y + 2), str(x + 1) + str(y - 2),
+                 str(x - 1) + str(y + 2), str(x - 1) + str(y - 2)]
+        possible_cords = [self.is_possible(cord) for cord in cords]
+        return possible_cords
+
+    def is_possible(self, cord):
+        if cord[0] in '12345678' and cord[1] in '12345678':
+            return cord_to_letter(int(cord[0])) + cord[1]
+        return None
+    
+    def check_move(self, cord1, cord2):
+        possible_cords = self.possibilities()
+        if cord2 in possible_cords:
+            if cord2 in figures:
+                if figures[cord2].team != self.team:
+                    return True
+                self.horse_error()
+                return False
+            return True
+        self.horse_error()
+        return False
+    
+    def horse_error(self):
+        print(colored('Этот конь не может совершить такой ход.', 'light_red'))
+        return False
 
 class Elephant(Figure):
     def __init__(self, name, cord, team):
